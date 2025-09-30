@@ -3,16 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Realidade Aumentada Interativa por Toque</title>
+    <title>WebXR: AR Sem Marcador (3 Modelos)</title>
 
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
     <style>
-        /* Define a AR Scene para cobrir toda a página no telemóvel */
         body { margin: 0; overflow: hidden; }
-        .a-canvas { width: 100vw; height: 100vh; }
-        /* Mensagem de instrução */
+        /* O botão de AR aparecerá automaticamente no canto inferior direito */
         #instrucao {
             position: fixed;
             top: 10px;
@@ -29,79 +26,100 @@
 </head>
 <body>
     <div id="instrucao">
-        Aponte a câmara para o **Marcador Hiro**. Toque na **esquerda** ou **direita** do ecrã para mudar de modelo.
+        1. Clique no **ícone AR**. 2. Aponte para o chão. 3. Toque no ecrã para colocar o objeto. Toque na **esquerda/direita** para trocar de modelo.
     </div>
 
-    <a-scene embedded arjs="sourceType: webcam; detectionMode: mono; maxDetectionRate: 30;" vr-mode-ui="enabled: false">
-        
-        <a-marker preset="hiro">
-            <a-entity id="modelo-container" scale="1 1 1"></a-entity>
-        </a-marker>
-        
-        <a-entity camera></a-entity>
+    <a-scene webxr="requiredFeatures: [hit-test, local-floor]; optionalFeatures: [dom-overlay]; overlay: #dom-overlay;">
+
+        <a-assets>
+            <a-asset-item id="modelo1" src="https://axbdc.github.io/testWebAR/ar-models/stitch_ar.glb"></a-asset-item>
+            <a-asset-item id="modelo2" src="https://axbdc.github.io/testWebAR/ar-models/model2.glb"></a-asset-item>
+            <a-asset-item id="modelo3" src="https://axbdc.github.io/testWebAR/ar-models/model3.glb"></a-asset-item>
+        </a-assets>
+
+        <a-camera position="0 0 0" wasd-controls="enabled: false">
+            <a-entity cursor="fuse: false; rayOrigin: mouse"
+                      raycaster="objects: [raycaster-target]; far: 50"
+                      hit-test-viewer></a-entity>
+        </a-camera>
+
     </a-scene>
 
     <script>
-        // *** ⚠️ ESTA É A LISTA QUE VOCÊ DEVE EDITAR COM OS SEUS CAMINHOS GLB ⚠️ ***
-        //
-        // Substitua 'SEU_UTILIZADOR' e 'SEU_REPOSITORIO' pelos seus dados reais.
+        // Lista de modelos a usar (usa os IDs definidos em a-assets)
         const modelos = [
-            // Mude os nomes 'modelo1.glb', 'modelo2.glb', etc., para os nomes exatos dos seus ficheiros.
-            { id: "Mesa", path: "https://axbdc.github.io/testWebAR/ar models/stitch_ar.glb" },
-            { id: "Cadeira", path: "https://axbdc.github.io/testWebAR/ar models/model2.glb" },
-            { id: "Sofá", path: "https://axbdc.github.io/testWebAR/ar models/model3.glb" }
+            { id: "Stitch", assetId: "#modelo1" }, 
+            { id: "Modelo 2", assetId: "#modelo2" },
+            { id: "Modelo 3", assetId: "#modelo3" } 
         ];
-        
         let indiceAtual = 0;
-        const modeloContainer = document.getElementById('modelo-container');
         
-        // Função para carregar o modelo na cena
-        function carregarModelo(index) {
-            // 1. Remove o modelo 3D anterior
-            while (modeloContainer.firstChild) {
-                modeloContainer.removeChild(modeloContainer.firstChild);
-            }
-
-            // 2. Cria e adiciona o novo elemento GLTF (GLB)
-            const novoModelo = document.createElement('a-entity');
-            novoModelo.setAttribute('gltf-model', `url(${modelos[index].path})`);
-            
-            modeloContainer.appendChild(novoModelo);
-            console.log("Modelo carregado: " + modelos[index].id);
-        }
-
-        // Funções de navegação circular
-        function proximoModelo() {
-            indiceAtual = (indiceAtual + 1) % modelos.length; 
-            carregarModelo(indiceAtual);
-        }
-
-        function modeloAnterior() {
-            indiceAtual = (indiceAtual - 1 + modelos.length) % modelos.length; 
-            carregarModelo(indiceAtual);
-        }
-
-        // 4. Lógica de Iniciação e Deteção de Toque/Clique
-        document.addEventListener('DOMContentLoaded', () => {
-            
-            // Carrega o primeiro modelo
-            carregarModelo(indiceAtual);
-            
-            // Listener de clique para a troca de modelos
-            window.addEventListener('click', (event) => {
-                const larguraEcra = window.innerWidth;
-                const posicaoX = event.clientX;
+        // --- 4.1. COMPONENTE A-FRAME PARA RASTREIO E COLOCAÇÃO ---
+        AFRAME.registerComponent('hit-test-viewer', {
+            init: function() {
+                const scene = this.el.sceneEl;
+                const camera = this.el;
+                let isAR = false;
+                let currentModel = null;
                 
-                // Clica/Toca na metade ESQUERDA
-                if (posicaoX < larguraEcra / 2) {
-                    modeloAnterior();
-                // Clica/Toca na metade DIREITA
-                } else {
-                    proximoModelo();
-                }
-            });
-        });
+                // Listener para a navegação por clique (após o AR ter começado)
+                camera.addEventListener('click', (event) => {
+                    if (isAR) {
+                        // Se o clique não for na câmara, ignora.
+                        if (event.target !== camera) return; 
 
+                        const larguraEcra = window.innerWidth;
+                        const posicaoX = event.clientX;
+                        
+                        // Determina se o toque foi na esquerda ou direita para trocar o modelo
+                        if (posicaoX < larguraEcra / 2) {
+                             indiceAtual = (indiceAtual - 1 + modelos.length) % modelos.length; // Anterior
+                        } else {
+                            indiceAtual = (indiceAtual + 1) % modelos.length; // Próximo
+                        }
+
+                        // Atualiza o modelo, se já existir um colocado
+                        if (currentModel) {
+                            currentModel.setAttribute('gltf-model', modelos[indiceAtual].assetId);
+                            console.log("Modelo alterado para: " + modelos[indiceAtual].id);
+                        }
+                    }
+                });
+
+                // --- EVENTO DE INÍCIO AR ---
+                scene.addEventListener('enter-vr', (event) => {
+                    if (scene.is('ar-mode')) {
+                        isAR = true;
+                        
+                        // Adiciona o listener para o toque na tela (que aciona o hit-test)
+                        scene.addEventListener('ar-hit-test-event', (event) => {
+                            // Se já existir um modelo, ou não houver colisão (hit), ignora.
+                            if (!event.detail.hit || currentModel) return;
+
+                            // Coloca o modelo no local de colisão (hit)
+                            currentModel = document.createElement('a-entity');
+                            
+                            // Adiciona o primeiro modelo da lista
+                            currentModel.setAttribute('gltf-model', modelos[indiceAtual].assetId);
+                            currentModel.setAttribute('scale', '0.1 0.1 0.1'); // Escala inicial, ajuste se necessário
+                            currentModel.setAttribute('shadow', 'receive: false');
+
+                            scene.appendChild(currentModel);
+                            
+                            console.log("Modelo colocado no chão.");
+                        });
+                    }
+                });
+                
+                // O WebXR fará o rastreamento, este evento pode ser usado para debug ou para mostrar um círculo no chão.
+                scene.addEventListener('ar-hit-test-event', (event) => {
+                    if (isAR && !currentModel && event.detail.hit) {
+                        // (Lógica para mostrar um ponto de mira)
+                    }
+                });
+            }
+        });
+        
     </script>
 </body>
 </html>
