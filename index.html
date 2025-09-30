@@ -37,3 +37,72 @@
         <a-marker preset="hiro">
             <a-entity id="modelo-container" scale="0.1 0.1 0.1"></a-entity>
         </a-marker>
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+        // ESTA É A LISTA QUE VOCÊ DEVE EDITAR COM OS SEUS CAMINHOS GLB!
+        const modelos = [
+            { id: "Stitch", path: "https://axbdc.github.io/ar-models/stitch_ar.glb" },
+            { id: "Modelo1", path: "https://axbdc.github.io/ar-models/modelo1.glb" },
+            { id: "Modelo2", path: "https://axbdc.github.io/ar-models/modelo2.glb" }
+        ];
+        
+        let indiceAtual = 0;
+        
+        // Elemento onde o modelo 3D será injetado
+        const modeloContainer = document.getElementById('modelo-container');
+        
+        // Função para carregar o modelo na cena
+        function carregarModelo(index) {
+            // 1. Remove o modelo 3D anterior (se existir)
+            while (modeloContainer.firstChild) {
+                modeloContainer.removeChild(modeloContainer.firstChild);
+            }
+
+            // 2. Cria um novo elemento de modelo GLTF (GLB)
+            const novoModelo = document.createElement('a-entity');
+            novoModelo.setAttribute('gltf-model', `url(${modelos[index].path})`);
+            
+            // 3. Adiciona o novo modelo ao container AR
+            modeloContainer.appendChild(novoModelo);
+            console.log("Modelo carregado: " + modelos[index].id);
+        }
+
+        // Funções de navegação circular
+        function proximoModelo() {
+            indiceAtual = (indiceAtual + 1) % modelos.length; // Avança e volta ao início se for o último
+            carregarModelo(indiceAtual);
+        }
+
+        function modeloAnterior() {
+            indiceAtual = (indiceAtual - 1 + modelos.length) % modelos.length; // Volta e vai para o final se for o primeiro
+            carregarModelo(indiceAtual);
+        }
+
+        // 4. Lógica de Iniciação e Deteção de Toque/Clique
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Carrega o primeiro modelo quando a cena AR estiver pronta
+            carregarModelo(indiceAtual);
+            
+            // Adiciona o listener de clique à janela inteira
+            window.addEventListener('click', (event) => {
+                const larguraEcra = window.innerWidth;
+                const posicaoX = event.clientX;
+                
+                // --- Regra de Interatividade ---
+                
+                // 1. Toque na metade ESQUERDA
+                if (posicaoX < larguraEcra / 2) {
+                    modeloAnterior();
+                // 2. Toque na metade DIREITA
+                } else {
+                    proximoModelo();
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
