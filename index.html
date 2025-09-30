@@ -29,7 +29,12 @@
         1. Clique no **ícone AR**. 2. Aponte para o chão. 3. Toque no ecrã para colocar o objeto. Toque na **esquerda/direita** para trocar de modelo.
     </div>
 
-    <a-scene webxr="requiredFeatures: [hit-test, local-floor]; optionalFeatures: [dom-overlay]; overlay: #dom-overlay;">
+    <a-scene 
+        webxr="requiredFeatures: [hit-test, local-floor]; optionalFeatures: [dom-overlay]; overlay: #dom-overlay;"
+        loading-screen="enabled: false;"
+        ar-mode-ui="enabled: false"
+        renderer="logarithmicDepthBuffer: true"
+    >
 
         <a-assets>
             <a-asset-item id="modelo1" src="https://axbdc.github.io/testWebAR/ar-models/stitch_ar.glb"></a-asset-item>
