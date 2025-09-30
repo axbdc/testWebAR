@@ -3,93 +3,37 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Realidade Aumentada Interativa</title>
+    <title>Realidade Aumentada Interativa por Toque</title>
 
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
     <style>
-        /* Estilo para cobrir toda a página */
+        /* Define a AR Scene para cobrir toda a página no telemóvel */
         body { margin: 0; overflow: hidden; }
         .a-canvas { width: 100vw; height: 100vh; }
+        /* Mensagem de instrução */
+        #instrucao {
+            position: fixed;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+            z-index: 99;
+            font-family: sans-serif;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
+    <div id="instrucao">
+        Aponte a câmara para o **Marcador Hiro**. Toque na **esquerda** ou **direita** do ecrã para mudar de modelo.
+    </div>
 
-    <a-scene embedded arjs="sourceType: webcam; detectionMode: mono; maxDetectionRate: 30; canvasWidth: 2400; canvasHeight: 1800" vr-mode-ui="enabled: false">
+    <a-scene embedded arjs="sourceType: webcam; detectionMode: mono; maxDetectionRate: 30;" vr-mode-ui="enabled: false">
         
         <a-marker preset="hiro">
             <a-entity id="modelo-container" scale="0.1 0.1 0.1"></a-entity>
         </a-marker>
-        
-        <a-entity camera></a-entity>
-    </a-scene>
-
-    <script>
-        // Lista dos modelos e índice atual
-        const modelos = [
-            { id: "original", glb: "https://axbdc.github.io/ar-models/stitch_ar.glb" },
-            { id: "modelo1", glb: "https://axbdc.github.io/ar-models/modelo2.glb" },
-            { id: "modelo2", glb: "https://axbdc.github.io/ar-models/modelo3.glb" }
-        ];
-        let indiceAtual = 0;
-        
-        // Elemento onde o modelo será colocado
-        const modeloContainer = document.getElementById('modelo-container');
-        
-        // Função para carregar o modelo na cena
-        function carregarModelo(index) {
-            // Remove o modelo 3D anterior
-            while (modeloContainer.firstChild) {
-                modeloContainer.removeChild(modeloContainer.firstChild);
-            }
-
-            // Cria um novo elemento de modelo GLTF (GLB)
-            const novoModelo = document.createElement('a-entity');
-            novoModelo.setAttribute('gltf-model', `url(${modelos[index].glb})`);
-            
-            // Adiciona o novo modelo ao container AR
-            modeloContainer.appendChild(novoModelo);
-            console.log("Modelo carregado: " + modelos[index].id);
-        }
-
-        // Funções de navegação
-        function proximoModelo() {
-            indiceAtual = (indiceAtual + 1) % modelos.length;
-            carregarModelo(indiceAtual);
-        }
-
-        function modeloAnterior() {
-            indiceAtual = (indiceAtual - 1 + modelos.length) % modelos.length;
-            carregarModelo(indiceAtual);
-        }
-
-        // 4. DETEÇÃO DE TOQUE/CLIQUE
-        document.addEventListener('DOMContentLoaded', () => {
-            // Garante que o primeiro modelo é carregado quando a página abre
-            carregarModelo(indiceAtual);
-            
-            // Adiciona o listener de clique à janela inteira
-            window.addEventListener('click', (event) => {
-                const larguraEcra = window.innerWidth;
-                const posicaoX = event.clientX;
-                
-                // Ignora o clique se o clique ocorreu no marcador em si
-                // (Para evitar bugs do AR.js)
-                if (event.target.closest('a-marker')) {
-                    return;
-                }
-
-                if (posicaoX < larguraEcra / 2) {
-                    // Toque na metade ESQUERDA
-                    modeloAnterior();
-                } else {
-                    // Toque na metade DIREITA
-                    proximoModelo();
-                }
-            });
-        });
-
-    </script>
-</body>
-</html>
